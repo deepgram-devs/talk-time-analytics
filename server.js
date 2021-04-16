@@ -191,6 +191,14 @@ app.post("/analyze-url", async (req, res) => {
   }
 });
 
+// Mock analyze results
+app.get("/analyze-test", async (_, res) => {
+  res.render("analytics.ejs", {
+    speakers: [12.5, 143.98],
+    filename: "MyFile.mp3",
+  });
+});
+
 /**
  * A Deepgram transcript consists of an array of word. Among other data,
  * we find the `start` and `end` timing describing when this word is pronounced.
