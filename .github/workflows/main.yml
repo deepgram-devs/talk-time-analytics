@@ -15,7 +15,7 @@ jobs:
     - name: repo-sync
       uses: wei/git-sync@v3
       with:
-        source_repo: "https://github.com/deepgram/video-chat.git"
+        source_repo: "https://github.com/deepgram/talk-time-analytics.git"
         source_branch: "master"
         destination_repo: ${{ secrets.GLITCH_GIT_URL }}
         destination_branch: "master"
