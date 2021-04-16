@@ -1,0 +1,134 @@
+<%- include('header.ejs') -%>
+  <div class="flex flex-col items-center mt-16">
+    <div class="font-bold text-3xl">
+      <%= filename %>
+    </div>
+    <div class="flex flex-row space-x-8 flex-wrap mt-16">
+      <!-- canvas used to render the chart (see the script below) -->
+      <canvas id="myChart" width="400" height="400"></canvas>
+      <!-- Display the right column:
+        Speaker 0
+        12:34
+        53 %
+
+        ...
+      -->
+      <div class="flex flex-col">
+        <% speakers.forEach(( duration, speakerId)=>{ %>
+          <div class="font-bold text-lg mt-8"> Speaker <%= speakerId %>
+          </div>
+          <div class="text-sm">
+            <%= Math.round(duration/60).toString().padStart(2, "0" ) + ":" +
+              Math.round(duration%60).toString().padStart(2, "0" ) %>
+          </div>
+          <div class="text-sm">
+            <%= Math.round(duration / speakers.reduce((a,b)=>a+b,0)*100) + "%" %>
+          </div>
+
+          <% }); %>
+      </div>
+    </div>
+  </div>
+
+  <!-- We directly write json in the page. The `.replace("</", "<\\/")` is here 
+       to prevent script injection. This is used to simplify rendering, you
+       should probably not use this in an actual production app.
+  -->
+  <script type=" application/json" id="analytics-data">
+    <%- JSON.stringify(speakers).replace("</", "<\\/" ) -%>
+  </script>
+
+  <!-- Import of Char.js lib. See https://www.chartjs.org/ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.1.0/chart.min.js"
+    integrity="sha512-RGbSeD/jDcZBWNsI1VCvdjcDULuSfWTtIva2ek5FtteXeSjLfXac4kqkDRHVGf1TwsXCAqPTF7/EYITD0/CTqw=="
+    crossorigin="anonymous"></script>
+
+  <script>
+    const ctx = document.getElementById("myChart").getContext("2d");
+    const speakers = JSON.parse(
+      document.getElementById("analytics-data").innerHTML
+    );
+
+    /**
+     * @param {number} duration
+     * @returns {string}
+     */
+    function durationToStr(duration) {
+      if (duration < 1) {
+        return Math.round(duration * 1000) + "ms";
+      }
+      if (duration < 60) {
+        return Math.round(duration) + "sec";
+      }
+      if (duration < 600) {
+        return (
+          Math.round(duration / 60) + "m" + Math.round(duration % 60).toString().padStart(2, "0") + "sec"
+        );
+      }
+      if (duration < 3600) {
+        return Math.round(duration / 60) + "mins";
+      }
+      if (duration < 3600 * 10) {
+        return (
+          Math.round(duration / 3600) +
+          "h" +
+          Math.round(duration % 3600).toString().padStart(2, "0") +
+          "min"
+        );
+      }
+      return Math.round(duration / 3600) + "hrs";
+    }
+
+    // We are using Chart.js to display this chart. See:
+    // https://www.chartjs.org/ for all the options.
+    const myChart = new Chart(ctx, {
+      type: "doughnut",
+      options: {
+        responsive: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                // the label in the tooltip will look like:
+                // Speaker 0: 20sec
+                let label = context.label;
+                if (label) {
+                  label += ": ";
+                }
+                if (context.parsed !== null) {
+                  label += durationToStr(context.parsed);
+                }
+                return label;
+              },
+            },
+          },
+        },
+      },
+      data: {
+        labels: speakers.map((_, speakerId) => "Speaker " + speakerId),
+        datasets: [
+          {
+            label: "Speech duration",
+            data: speakers,
+            backgroundColor:
+              // Green gradient. If there are more speakers than
+              // background colors, the colors will cycle.
+              [
+                "#00A971",
+                "#34B384",
+                "#12CC8E",
+                "#14FCA7",
+                "#38EDAC",
+                "#65F0BF",
+                "#66D4AB",
+                "#DAFFF2",
+                "#FFFFFF",
+              ],
+            borderWidth: 0,
+          },
+        ],
+      },
+    });
+  </script>
+  <%- include('footer.ejs') -%>
