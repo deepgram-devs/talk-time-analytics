@@ -10,7 +10,7 @@ strongly discourage direct use of this code in production environnement.
 
 # How can I deploy it?
 
-_Prerequisites:_ Deepgram account and API Key.
+_Prerequisites: Deepgram account and API Key._
 
 You can "remix" this application on Glitch:
 
@@ -21,6 +21,36 @@ You can "remix" this application on Glitch:
 
 When accessing this URL in your browser, the project will be forked and deployed. Glitch comes with
 an online editor so you'll have all the needed tools to play with your own app instance!
+
+# Can I run it on my own computer?
+
+_Prerequisites: Deepgram account and API Key._
+
+Yes, of course! First, copy-paste those lines in your terminal:
+
+```bash
+# Clone this repo
+git clone https://github.com/deepgram/talk-time-analytics.git
+# move to the created directory
+cd talk-time-analytics
+```
+
+Replace `INSERT_KEY_HERE` and `INSERT_SECRET_HERE` with you API key and secret
+in the following snippet, then save this snippet as a file named `.env`
+(note that this is bash-like file, so spaces around `=` are not allowed).
+
+```bash
+PORT=3000
+DG_KEY=INSERT_KEY_HERE
+DG_SECRET=INSERT_SECRET_HERE
+```
+
+Then, install the dependencies and start the server:
+
+```bash
+npm install
+npm start
+```
 
 # How does it work?
 
@@ -39,3 +69,7 @@ The workflow is the following:
 _Note:_ we could directly request Deepgram API from the browser, _BUT_ this would
 ask you disclosing your Deepgram API key to the user. Think about it twice
 before choosing this option.
+
+```
+
+```
