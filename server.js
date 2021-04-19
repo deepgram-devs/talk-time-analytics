@@ -45,7 +45,9 @@ if (!fs.existsSync(UPLOAD_DIST)) {
   fs.mkdirSync(UPLOAD_DIST); // ... create it!
 }
 
-app.get("/uploaded-file/:filename/", (req, res) => {
+// We expose the uploaded files so we can play them on the `analytics.ejs` result
+// page.
+app.get("/uploaded-file/:filename", (req, res) => {
   const filename = req.params.filename;
   // Prevent accessing another folder than `UPLOAD_DIST`.
   if (filename.indexOf("/") !== -1) {
@@ -87,12 +89,13 @@ app.get("/", (req, res) => {
  * @param {{
  *   res: import("express-serve-static-core").Response<any, Record<string, any>, number>
  * ; filename: string
+ * ; fileUrl : string
  * ; contentType: string
  * ; payload: Buffer | string
 
  * }} params
  */
-function requestDeepgramAPI({ res, filename, contentType, payload }) {
+function requestDeepgramAPI({ res, filename, fileUrl, contentType, payload }) {
   const options = {
     host: "brain.deepgram.com",
     /** You can add options as parameters in the URL, see the docs:
@@ -127,6 +130,7 @@ function requestDeepgramAPI({ res, filename, contentType, payload }) {
       res.render("analytics.ejs", {
         speakers,
         filename,
+        fileUrl,
       });
     });
     dgRes.on("error", (err) => {
@@ -163,7 +167,8 @@ app.post("/analyze-file", upload.single("file"), async (req, res) => {
       });
     } else {
       const file = req.file;
-
+      const filePath = file.path.split("/");
+      const fileUrl = "/uploaded-file/" + filePath[filePath.length - 1];
       // We request file content...
       fs.readFile(req.file.path, (err, data) => {
         if (err) {
@@ -174,8 +179,9 @@ app.post("/analyze-file", upload.single("file"), async (req, res) => {
         // it to Deepgram API.
         requestDeepgramAPI({
           res,
-          filename: req.file.originalname,
-          contentType: req.file.mimetype,
+          filename: file.originalname,
+          fileUrl,
+          contentType: file.mimetype,
           payload: data,
         });
       });
@@ -200,6 +206,7 @@ app.post("/analyze-url", async (req, res) => {
       requestDeepgramAPI({
         res,
         filename: url,
+        fileUrl: url,
         contentType: "application/json",
         payload: JSON.stringify({ url }),
       });
