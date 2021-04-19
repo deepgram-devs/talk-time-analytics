@@ -59,7 +59,7 @@ app.get("/", (req, res) => {
 });
 
 /**
- * Request ASR to Deepgram server.
+ * Request ASR from Deepgram server.
  * If `contentType == "application/json"`, Deepgram API expects the `payload` to
  * be something like: `{ url: "https://myurl.com/myaudiofile.mp3" }`. The url has to point
  * to an audio file.
@@ -169,6 +169,9 @@ app.post("/analyze-file", upload.single("file"), async (req, res) => {
   }
 });
 
+/**
+ * Handle file upload from URL.
+ */
 app.post("/analyze-url", async (req, res) => {
   try {
     if (!req.body.url) {
@@ -200,11 +203,11 @@ app.get("/analyze-test", async (_, res) => {
 });
 
 /**
- * A Deepgram transcript consists of an array of word. Among other data,
- * we find the `start` and `end` timing describing when this word is pronounced.
+ * Each Deepgram response consists of a transcript, a confidence score, and a word array.
+ * In that array, we can see the `start` and `end` timings detailing when each word is said.
  *
- * If we provide the `diarize=true` option, we also have a `speaker` field containing
- * the speaker id (integer, starting at 0).
+ * If we provide the `diarize=true` option, the response will contain a `speaker` field with
+ * an associated speaker id (integer, starting at 0) for each word.
  *
  * @typedef {{speaker: number; start:number; end:number; }} Word */
 
