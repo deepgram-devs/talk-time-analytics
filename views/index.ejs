@@ -1,100 +1,82 @@
 <%- include('header.ejs') -%>
-<div class="mt-40 flex flex-row space-x-10">
-  <div id="file-form">
-    <form
-      class="flex flex-col space-y-3"
-      action="/analyze-file"
-      enctype="multipart/form-data"
-      method="POST"
-    >
-      <span class="font-bold text-sm">FROM YOUR DEVICE:</span>
-      <input type="file" id="file-input" name="file" required hidden />
+  <div class="mt-40 flex flex-row space-x-10">
+    <div id="file-form">
+      <form class="flex flex-col space-y-3" action="/analyze-file" enctype="multipart/form-data" method="POST">
+        <span class="font-bold text-sm">FROM YOUR DEVICE:</span>
+        <input type="file" id="file-input" name="file" required hidden />
 
-      <label
-        class="bg-mint py-2 text-darkcharcoal w-60 cursor-pointer rounded-md text-center font-bold"
-        for="file-input"
-        id="file-input-label"
-      >
-        Browse Files
-      </label>
-      <div
-        class="font-bold text-3xl py-3 in-second-screen"
-        id="file-name"
-        hidden
-      ></div>
-      <button
-        type="submit"
-        class="in-second-screen text-darkcharcoal bg-mint py-2 w-60 rounded-md font-bold"
-        hidden
-      >
-        Analyze
-      </button>
-    </form>
+        <label class="bg-mint py-2 text-darkcharcoal w-60 cursor-pointer rounded-md text-center font-bold"
+          for="file-input" id="file-input-label">
+          Browse Files
+        </label>
+        <div class="font-bold text-3xl py-3 in-second-screen" id="file-name" hidden></div>
+        <button type="submit" class="in-second-screen text-darkcharcoal bg-mint py-2 w-60 rounded-md font-bold" hidden>
+          Analyze
+        </button>
+      </form>
+    </div>
+    <div id="url-form">
+      <form class="flex flex-col space-y-3" action="/analyze-url" method="POST">
+        <span class="font-bold text-sm">FROM AN URL:</span>
+        <input type="text" id="url-input"
+          class="bg-darkcharcoal p-2 border border-casper border-solid rounded-md placeholder-steel w-60" name="url"
+          placeholder="myremoteurl-file.com" required />
+        <button type="submit" class="in-second-screen text-darkcharcoal bg-mint py-2 w-60 rounded-md font-bold" hidden>
+          Analyze
+        </button>
+      </form>
+    </div>
   </div>
-  <div id="url-form">
-    <form class="flex flex-col space-y-3" action="/analyze-url" method="POST">
-      <span class="font-bold text-sm">FROM AN URL:</span>
-      <input
-        type="text"
-        id="url-input"
-        class="bg-darkcharcoal p-2 border border-casper border-solid rounded-md placeholder-steel w-60"
-        name="url"
-        placeholder="myremoteurl-file.com"
-        required
-      />
-      <button
-        type="submit"
-        class="in-second-screen text-darkcharcoal bg-mint py-2 w-60 rounded-md font-bold"
-        hidden
-      >
-        Analyze
-      </button>
-    </form>
-  </div>
-</div>
 
-<button
-  type="button"
-  class="in-second-screen text-casper font-bold mt-10 self-start text-sm"
-  id="go-back-button"
-  hidden
->
-  〈 GO BACK
-</button>
+  <button type="button" class="in-second-screen text-casper font-bold mt-10 self-start text-sm" id="go-back-button"
+    hidden>
+    〈 GO BACK
+  </button>
 
-<script>
-  const urlForm = document.querySelector("#url-form");
-  const urlInput = document.querySelector("#url-input");
-  const fileForm = document.querySelector("#file-form");
-  const fileInput = document.querySelector("#file-input");
-  const fileName = document.querySelector("#file-name");
-  const fileInputLabel = document.querySelector("#file-input-label");
-  const goBackButton = document.querySelector("#go-back-button");
+  <script>
+    const urlForm = document.querySelector("#url-form");
+    const urlInput = document.querySelector("#url-input");
+    const fileForm = document.querySelector("#file-form");
+    const fileInput = document.querySelector("#file-input");
+    const fileName = document.querySelector("#file-name");
+    const fileInputLabel = document.querySelector("#file-input-label");
+    const goBackButton = document.querySelector("#go-back-button");
 
-  urlInput.addEventListener("input", () => {
-    fileForm.hidden = true;
-    document
-      .querySelectorAll(".in-second-screen")
-      .forEach((node) => (node.hidden = false));
-  });
+    urlInput.addEventListener("input", () => {
+      fileForm.hidden = true;
+      document
+        .querySelectorAll(".in-second-screen")
+        .forEach((node) => (node.hidden = false));
+    });
 
-  fileInput.addEventListener("change", () => {
-    urlForm.hidden = true;
-    fileInputLabel.hidden = true;
-    fileName.textContent = fileInput.files[0].name;
-    document
-      .querySelectorAll(".in-second-screen")
-      .forEach((node) => (node.hidden = false));
-  });
+    fileInput.addEventListener("change", () => {
+      urlForm.hidden = true;
+      fileInputLabel.hidden = true;
+      fileName.textContent = fileInput.files[0].name;
+      document
+        .querySelectorAll(".in-second-screen")
+        .forEach((node) => (node.hidden = false));
+    });
 
-  goBackButton.addEventListener("click", () => {
-    document
-      .querySelectorAll(".in-second-screen")
-      .forEach((node) => (node.hidden = true));
-    urlForm.hidden = false;
-    fileForm.hidden = false;
-    fileInput.value = null;
-    fileInputLabel.hidden = false;
-  });
-</script>
-<%- include('footer.ejs') -%>
+    goBackButton.addEventListener("click", () => {
+      document
+        .querySelectorAll(".in-second-screen")
+        .forEach((node) => (node.hidden = true));
+      urlForm.hidden = false;
+      fileForm.hidden = false;
+      fileInput.value = null;
+      fileInputLabel.hidden = false;
+    });
+
+    function handleSubmit() {
+      const submitButtonNode = this.querySelector("button[type='submit']");
+      console.log(submitButtonNode, this);
+      submitButtonNode.classList.add("opacity-50", "cursor-not-allowed");
+      submitButtonNode.innerText = "Analyzing...";
+      submitButtonNode.disabled = true;
+    }
+
+    urlForm.addEventListener("submit", handleSubmit);
+    fileForm.addEventListener("submit", handleSubmit);
+  </script>
+  <%- include('footer.ejs') -%>
