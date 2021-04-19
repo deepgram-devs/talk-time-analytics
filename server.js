@@ -34,13 +34,30 @@ const app = express();
 app.set("view engine", "ejs"); // initialize "ejs" template engine
 let server = http.createServer(app);
 
-const UPLOAD_DIST = ".data/";
+// We use `/tmp` to store the file sent by users because there are no size
+// limit on Glitch in this directory. On Glitch, those files will be removed
+// at every application restart. You might want using another folder and cleaning
+// strategy for a real app.
+const UPLOAD_DIST = "/tmp/uploaded/";
 const upload = multer({ dest: UPLOAD_DIST }); // initialize file upload handling
-
 if (!fs.existsSync(UPLOAD_DIST)) {
   // if the upload destination folder doesn't exist
   fs.mkdirSync(UPLOAD_DIST); // ... create it!
 }
+
+app.get("/uploaded-file/:filename/", (req, res) => {
+  const filename = req.params.filename;
+  // Prevent accessing another folder than `UPLOAD_DIST`.
+  if (filename.indexOf("/") !== -1) {
+    res.status(400).send("You cannot access this resource.");
+  }
+  const completePath = UPLOAD_DIST + filename;
+  if (!fs.existsSync(completePath)) {
+    res.status(404).send("This resource doesn't exist");
+  } else {
+    res.sendFile(completePath);
+  }
+});
 
 // enable body parsing
 app.use(bodyParser.json());
@@ -67,17 +84,15 @@ app.get("/", (req, res) => {
  * If `contentType` is NOT "application/json", Deepgram server expects the payload to
  * be raw binary audio file.
  *
- * `cleaning` function is called either when the request is successfully completed
- * or if there are some error during this request.
  * @param {{
  *   res: import("express-serve-static-core").Response<any, Record<string, any>, number>
  * ; filename: string
  * ; contentType: string
  * ; payload: Buffer | string
- * ; cleaning: () => void
+
  * }} params
  */
-function requestDeepgramAPI({ res, filename, contentType, payload, cleaning }) {
+function requestDeepgramAPI({ res, filename, contentType, payload }) {
   const options = {
     host: "brain.deepgram.com",
     /** You can add options as parameters in the URL, see the docs:
@@ -113,17 +128,14 @@ function requestDeepgramAPI({ res, filename, contentType, payload, cleaning }) {
         speakers,
         filename,
       });
-      cleaning();
     });
     dgRes.on("error", (err) => {
       error(res, err);
-      cleaning();
     });
   });
 
   dgReq.on("error", (err) => {
     error(res, err);
-    cleaning();
   });
   dgReq.write(payload);
   dgReq.end();
@@ -165,7 +177,6 @@ app.post("/analyze-file", upload.single("file"), async (req, res) => {
           filename: req.file.originalname,
           contentType: req.file.mimetype,
           payload: data,
-          cleaning: () => fs.unlinkSync(file.path),
         });
       });
     }
@@ -191,7 +202,6 @@ app.post("/analyze-url", async (req, res) => {
         filename: url,
         contentType: "application/json",
         payload: JSON.stringify({ url }),
-        cleaning: () => {},
       });
     }
   } catch (err) {
