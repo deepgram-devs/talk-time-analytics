@@ -35,7 +35,7 @@ git clone https://github.com/deepgram/talk-time-analytics.git
 cd talk-time-analytics
 ```
 
-Replace `INSERT_KEY_HERE` and `INSERT_SECRET_HERE` with you API key and secret
+Replace `INSERT_KEY_HERE` and `INSERT_SECRET_HERE` with your API key and secret
 in the following snippet, then save this snippet as a file named `.env`
 (note that this is bash-like file, so spaces around `=` are not allowed).
 
