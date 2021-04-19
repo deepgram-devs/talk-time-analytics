@@ -28,6 +28,18 @@
     <h2 class="mt-10 text-casper font-bold">DEEPGRAM SPEECH RECOGNITION</h2>
     <h1 class="text-5xl font-semibold font-cairo">Talk Time Analytics</h1>
 
-    <p class="text-cloud mt-20">
+    <div class="flex flex-row space-x-8 mt-10">
+      <a class="border-2 border-solid text-mint py-2 w-60 rounded-md font-bold text-center" id="edit-on-glitch-button" target="_blank" hidden>Edit on Glitch</a>
+      <a class="text-darkcharcoal bg-mint py-2 w-60 rounded-md font-bold text-center" href="https://github.com/deepgram/talk-time-analytics" target="_blank">See in Github</a>
+      <script>
+        const editOnGlitchNode = document.querySelector("#edit-on-glitch-button");
+        const [subdomain, ...domain] = location.host.split(".");
+        if (domain.length === 2 && domain[0] === "glitch" && domain[1] === "me") {
+          editOnGlitchNode.href = "https://glitch.com/edit/#!/" + subdomain;
+          editOnGlitchNode.hidden = false;
+        }
+      </script>
+    </div>
+    <p class="text-cloud mt-10">
       Upload an audio file to calculate the talk time of each speaker.
     </p>  
