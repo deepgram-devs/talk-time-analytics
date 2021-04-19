@@ -69,7 +69,3 @@ The workflow is the following:
 _Note:_ we could directly request Deepgram API from the browser, _BUT_ this would
 ask you disclosing your Deepgram API key to the user. Think about it twice
 before choosing this option.
-
-```
-
-```
