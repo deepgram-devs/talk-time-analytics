@@ -3,10 +3,14 @@
 This app aims to demonstrate how to use Deepgram API to compute
 talk time per speaker.
 
+We use [Chart.js](https://chartjs.org/) to render those data.
+
 **WARNING**: This is an example application only designed for demoing. We
 strongly discourage direct use of this code in production environnement.
 
 # How can I deploy it?
+
+_Prerequisites:_ Deepgram account and API Key.
 
 You can "remix" this application on Glitch:
 
