@@ -103,6 +103,11 @@ function requestDeepgramAPI({ res, filename, contentType, payload, cleaning }) {
       // we compute time per speaker, then render it with
       // the template.
       const dgResJson = JSON.parse(dgResContent);
+      if (dgResJson.error) {
+        error(res, dgResJson);
+        return;
+      }
+
       const speakers = computeSpeakingTime(dgResJson);
       res.render("analytics.ejs", {
         speakers,
