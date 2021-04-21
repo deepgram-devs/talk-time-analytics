@@ -12,7 +12,7 @@ const https = require("https"); // used to perform request to Deepgram API
 const ejs = require("ejs"); // template engine
 const multer = require("multer"); // handle file upload
 const fs = require("fs"); // access to the server's file system.
-
+const deepgram = require("./dgsdk");
 /** Deepgram API key and secret.
  * - See https://developers.deepgram.com/api-reference/speech-recognition-api#operation/createAPIKey
  *   to create the key with cURL or equivalent tool.
@@ -26,9 +26,7 @@ if (DG_KEY === undefined || DG_SECRET === undefined) {
   throw "You must define DG_KEY and DG_SECRET in your .env file";
 }
 
-// Encode the Deepgram credentials in base64. Will be used to authenticate
-// through the Deepgram API.
-const DG_CREDENTIALS = Buffer.from(DG_KEY + ":" + DG_SECRET).toString("base64");
+const DG_CREDENTIALS = { api_key: DG_KEY, api_secret: DG_SECRET };
 
 const app = express();
 app.set("view engine", "ejs"); // initialize "ejs" template engine
@@ -125,13 +123,6 @@ function requestDeepgramAPI({ res, filename, fileUrl, contentType, payload }) {
         error(res, dgResJson);
         return;
       }
-
-      const speakers = computeSpeakingTime(dgResJson);
-      res.render("analytics.ejs", {
-        speakers,
-        filename,
-        fileUrl,
-      });
     });
     dgRes.on("error", (err) => {
       error(res, err);
@@ -170,25 +161,30 @@ app.post("/analyze-file", upload.single("file"), async (req, res) => {
       const filePath = file.path.split("/");
       const fileUrl = "/uploaded-file/" + filePath[filePath.length - 1];
       // We request file content...
-      fs.readFile(req.file.path, (err, data) => {
+      fs.readFile(req.file.path, async (err, data) => {
         if (err) {
           error(res, err);
           return;
         }
         // When we have the file content, we forward
         // it to Deepgram API.
-        requestDeepgramAPI({
-          res,
-          filename: file.originalname,
-          fileUrl,
-          contentType: file.mimetype,
-          payload: data,
+        const dgResponse = await deepgram.listen({
+          credentials: DG_CREDENTIALS,
+          source: { kind: "buffer", buffer: data, mimetype: file.mimetype },
+          options: { diarize: true, punctuate: true },
         });
+        if (dgResponse.kind === "error") {
+          error(res, err);
+        } else {
+          renderAnalytics(res, {
+            filename: file.originalname,
+            fileUrl,
+            words: dgResponse.results.channels[0].alternatives[0].words,
+          });
+        }
       });
     }
-  } catch (err) {
-    error(res, err);
-  }
+  } catch (err) {}
 });
 
 /**
@@ -237,12 +233,10 @@ app.get("/analyze-test", async (_, res) => {
  * Returns an array of speaking time. The number at the index `i` is the
  * speaking time of the speaker `i`.
  *
- * @param {{ results: { channels: Array<{ alternatives: Array<{ words: Array<Word> }> }>}} } transcript
+ * @param {   Array<Word> } words
  * @returns { Array<number>}
  */
-function computeSpeakingTime(transcript) {
-  const words = transcript.results.channels[0].alternatives[0].words;
-
+function computeSpeakingTime(words) {
   if (words.length === 0) {
     return [];
   }
@@ -290,6 +284,19 @@ function computeSpeakingTime(transcript) {
 function addSpeakingTime(speaker, duration, timePerSpeaker) {
   const currentSpeakerDuration = timePerSpeaker.get(speaker) || 0;
   timePerSpeaker.set(speaker, currentSpeakerDuration + duration);
+}
+
+/**
+ * @param {import("express-serve-static-core").Response<any, Record<string, any>, number>} res
+ * @param { {filename:string, fileUrl: string, words: Array<Word>}} words
+ */
+function renderAnalytics(res, { filename, fileUrl, words }) {
+  const speakers = computeSpeakingTime(words);
+  res.render("analytics.ejs", {
+    speakers,
+    filename,
+    fileUrl,
+  });
 }
 
 const listener = server.listen(process.env.PORT, () =>
