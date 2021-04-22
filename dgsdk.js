@@ -18,6 +18,44 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DeepgramAPI = void 0;
 var https_1 = require("https");
+function buildAPIRoute(options) {
+    var queryParams = [];
+    if (options.punctuation === "punctuated") {
+        queryParams.push("punctuate=true");
+    }
+    if (options.diarization === "diarized") {
+        queryParams.push("diarize=true");
+    }
+    if (options.alternativesCount > 1) {
+        queryParams.push("alternatives=" + options.alternativesCount);
+    }
+    if (options.profanityFilter) {
+        queryParams.push("profanity_filter=true");
+    }
+    if (options.numbersReadaction) {
+        queryParams.push("redact=numbers");
+    }
+    if (options.SSNReadaction) {
+        queryParams.push("redact=ssn");
+    }
+    if (options.PCIReadaction) {
+        queryParams.push("redact=pci");
+    }
+    for (var _i = 0, _a = options.keywords; _i < _a.length; _i++) {
+        var keyword = _a[_i];
+        if (typeof keyword === "string") {
+            queryParams.push("keywords=" + encodeURIComponent(keyword));
+        }
+        else {
+            queryParams.push("keywords=" + encodeURIComponent(keyword.word) + ":" + keyword.boost);
+        }
+    }
+    for (var _b = 0, _c = options.searchedTerms; _b < _c.length; _b++) {
+        var term = _c[_b];
+        queryParams.push("search=" + encodeURIComponent(term));
+    }
+    return ("/v2/listen" + (queryParams.length === 0 ? "" : "?" + queryParams.join("&")));
+}
 var DGOptions = /** @class */ (function () {
     function DGOptions(options) {
         this.options = options;
@@ -43,59 +81,17 @@ var DGOptions = /** @class */ (function () {
     DGOptions.prototype.readactSSN = function () {
         return new DGOptions(__assign(__assign({}, this.options), { SSNReadaction: true }));
     };
-    DGOptions.prototype.isMultiAlternatives = function () {
-        return this.options.alternativesSet;
-    };
     DGOptions.prototype.addKeywords = function (keywords) {
         return new DGOptions(__assign(__assign({}, this.options), { keywords: __spreadArray(__spreadArray([], this.options.keywords), keywords) }));
     };
     DGOptions.prototype.addSearchTerms = function (terms) {
         return new DGOptions(__assign(__assign({}, this.options), { searchedTerms: __spreadArray(__spreadArray([], this.options.searchedTerms), terms), searchSet: true }));
     };
-    DGOptions.prototype.isSearch = function () {
-        return this.options.searchSet;
-    };
     DGOptions.prototype.buildAPIRoute = function () {
-        var queryParams = [];
-        if (this.options.punctuation === "punctuated") {
-            queryParams.push("punctuate=true");
-        }
-        if (this.options.diarization === "diarized") {
-            queryParams.push("diarize=true");
-        }
-        if (this.options.alternativesCount > 1) {
-            queryParams.push("alternatives=" + this.options.alternativesCount);
-        }
-        if (this.options.profanityFilter) {
-            queryParams.push("profanity_filter=true");
-        }
-        if (this.options.numbersReadaction) {
-            queryParams.push("redact=numbers");
-        }
-        if (this.options.SSNReadaction) {
-            queryParams.push("redact=ssn");
-        }
-        if (this.options.PCIReadaction) {
-            queryParams.push("redact=pci");
-        }
-        for (var _i = 0, _a = this.options.keywords; _i < _a.length; _i++) {
-            var keyword = _a[_i];
-            if (typeof keyword === "string") {
-                queryParams.push("keywords=" + encodeURIComponent(keyword));
-            }
-            else {
-                queryParams.push("keywords=" + encodeURIComponent(keyword.word) + ":" + keyword.boost);
-            }
-        }
-        for (var _b = 0, _c = this.options.searchedTerms; _b < _c.length; _b++) {
-            var term = _c[_b];
-            queryParams.push("keywords=" + encodeURIComponent(term));
-        }
-        return ("/v2/listen" +
-            (queryParams.length === 0 ? "" : "?" + queryParams.join("&")));
+        return buildAPIRoute(this.options);
     };
     DGOptions.prototype.withCredentials = function (credentials) {
-        return new DGExectuor(this, credentials.api_key, credentials.api_secret);
+        return new DGExectuor(this.options, credentials.api_key, credentials.api_secret);
     };
     return DGOptions;
 }());
@@ -145,7 +141,7 @@ function listen(_a) {
         /** You can add options as parameters in the URL, see the docs:
          * https://developers.deepgram.com/api-reference/speech-recognition-api#operation/transcribeStreamingAudio
          */
-        path: options.buildAPIRoute(),
+        path: buildAPIRoute(options),
         method: "POST",
         headers: {
             "Content-Type": source.kind === "url" ? "application/json" : source.mimetype,
@@ -169,13 +165,14 @@ function listen(_a) {
                     resolve({ status: "error", reason: dgResContent });
                 }
                 else {
+                    console.log(dgResJson.results.channels[0]);
                     resolve({
                         status: "success",
                         metadata: dgResJson.metadata,
-                        channels: options.isMultiAlternatives()
+                        channels: options.alternativesSet
                             ? dgResJson.results.channels
                             : dgResJson.results.channels.map(function (channel) {
-                                return options.isSearch()
+                                return options.searchSet
                                     ? __assign({ search: channel.search }, channel.alternatives[0]) : channel.alternatives[0];
                             }),
                     });
