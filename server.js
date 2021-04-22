@@ -12,7 +12,8 @@ const https = require("https"); // used to perform request to Deepgram API
 const ejs = require("ejs"); // template engine
 const multer = require("multer"); // handle file upload
 const fs = require("fs"); // access to the server's file system.
-const deepgram = require("./dgsdk");
+const Deepgram = require("./dgsdk");
+const DeepgramAPI = Deepgram.DeepgramAPI;
 /** Deepgram API key and secret.
  * - See https://developers.deepgram.com/api-reference/speech-recognition-api#operation/createAPIKey
  *   to create the key with cURL or equivalent tool.
@@ -25,8 +26,6 @@ const DG_SECRET = process.env.DG_SECRET;
 if (DG_KEY === undefined || DG_SECRET === undefined) {
   throw "You must define DG_KEY and DG_SECRET in your .env file";
 }
-
-const DG_CREDENTIALS = { api_key: DG_KEY, api_secret: DG_SECRET };
 
 const app = express();
 app.set("view engine", "ejs"); // initialize "ejs" template engine
@@ -76,74 +75,17 @@ app.get("/", (req, res) => {
 });
 
 /**
- * Request ASR from Deepgram server.
- * If `contentType == "application/json"`, Deepgram API expects the `payload` to
- * be something like: `{ url: "https://myurl.com/myaudiofile.mp3" }`. The url has to point
- * to an audio file.
- *
- * If `contentType` is NOT "application/json", Deepgram server expects the payload to
- * be raw binary audio file.
- *
- * @param {{
- *   res: import("express-serve-static-core").Response<any, Record<string, any>, number>
- * ; filename: string
- * ; fileUrl : string
- * ; contentType: string
- * ; payload: Buffer | string
-
- * }} params
- */
-function requestDeepgramAPI({ res, filename, fileUrl, contentType, payload }) {
-  const options = {
-    host: "brain.deepgram.com",
-    /** You can add options as parameters in the URL, see the docs:
-     * https://developers.deepgram.com/api-reference/speech-recognition-api#operation/transcribeStreamingAudio
-     */
-    path: "/v2/listen?punctuate=true&diarize=true",
-    method: "POST",
-    headers: {
-      "Content-Type": contentType,
-      Authorization: "Basic " + DG_CREDENTIALS,
-    },
-  };
-  const dgReq = https.request(options, (dgRes) => {
-    // we accumulate data in `dgResContent` as it
-    // comes from Deepgram API
-    let dgResContent = "";
-    dgRes.on("data", (chunk) => {
-      dgResContent += chunk;
-    });
-
-    dgRes.on("end", () => {
-      // When we have the complete answer from Deepgram API,
-      // we compute time per speaker, then render it with
-      // the template.
-      const dgResJson = JSON.parse(dgResContent);
-      if (dgResJson.error) {
-        error(res, dgResJson);
-        return;
-      }
-    });
-    dgRes.on("error", (err) => {
-      error(res, err);
-    });
-  });
-
-  dgReq.on("error", (err) => {
-    error(res, err);
-  });
-  dgReq.write(payload);
-  dgReq.end();
-}
-
-/**
  * @param {import("express-serve-static-core").Response<any, Record<string, any>, number>} res
- * @param {Error} error
+ * @param {String} error
  */
 function error(res, error) {
   console.error(error);
   res.status(500).send("Something went wrong :/");
 }
+
+const DG_EXECUTOR = DeepgramAPI.diarize()
+  .punctuate()
+  .withCredentials({ api_key: DG_KEY, api_secret: DG_SECRET });
 
 /**
  * Handle file upload. The file will be stored on the server's disk
@@ -163,23 +105,22 @@ app.post("/analyze-file", upload.single("file"), async (req, res) => {
       // We request file content...
       fs.readFile(req.file.path, async (err, data) => {
         if (err) {
-          error(res, err);
+          error(res, JSON.stringify(err));
           return;
         }
         // When we have the file content, we forward
         // it to Deepgram API.
-        const dgResponse = await deepgram.listen({
-          credentials: DG_CREDENTIALS,
-          source: { kind: "buffer", buffer: data, mimetype: file.mimetype },
-          options: { diarize: true, punctuate: true },
+        const dgResponse = await DG_EXECUTOR.transcribeBuffer({
+          buffer: data,
+          mimetype: file.mimetype,
         });
-        if (dgResponse.kind === "error") {
-          error(res, err);
+        if (dgResponse.status === "error") {
+          error(res, dgResponse.reason);
         } else {
           renderAnalytics(res, {
             filename: file.originalname,
             fileUrl,
-            words: dgResponse.results.channels[0].alternatives[0].words,
+            words: dgResponse.channels[0].words,
           });
         }
       });
@@ -199,13 +140,16 @@ app.post("/analyze-url", async (req, res) => {
       });
     } else {
       const url = req.body.url;
-      requestDeepgramAPI({
-        res,
-        filename: url,
-        fileUrl: url,
-        contentType: "application/json",
-        payload: JSON.stringify({ url }),
-      });
+      const dgResponse = await DG_EXECUTOR.transcribeUrl(url);
+      if (dgResponse.status === "error") {
+        error(res, dgResponse.reason);
+      } else {
+        renderAnalytics(res, {
+          filename: url,
+          fileUrl: url,
+          words: dgResponse.channels[0].words,
+        });
+      }
     }
   } catch (err) {
     error(res, err);
@@ -227,13 +171,12 @@ app.get("/analyze-test", async (_, res) => {
  * If we provide the `diarize=true` option, the response will contain a `speaker` field with
  * an associated speaker id (integer, starting at 0) for each word.
  *
- * @typedef {{speaker: number; start:number; end:number; }} Word */
-
+/
 /**
  * Returns an array of speaking time. The number at the index `i` is the
  * speaking time of the speaker `i`.
  *
- * @param {   Array<Word> } words
+ * @param {   Array<Deepgram.DGWord<"diarized", Deepgram.Punctuation>> } words
  * @returns { Array<number>}
  */
 function computeSpeakingTime(words) {
@@ -288,7 +231,7 @@ function addSpeakingTime(speaker, duration, timePerSpeaker) {
 
 /**
  * @param {import("express-serve-static-core").Response<any, Record<string, any>, number>} res
- * @param { {filename:string, fileUrl: string, words: Array<Word>}} words
+ * @param { {filename:string, fileUrl: string, words: Array<Deepgram.DGWord<"diarized", Deepgram.Punctuation>>}} words
  */
 function renderAnalytics(res, { filename, fileUrl, words }) {
   const speakers = computeSpeakingTime(words);
