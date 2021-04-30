@@ -16,6 +16,10 @@ type DGApiResponse<
       channels: Array<DGChannel<Alt, S, W>>;
     };
 
+type DGApiCallbackResponse =
+  | { status: "error"; reason: string }
+  | { status: "success"; request_id: string };
+
 type DGApiMetadata = {
   request_id: string;
   transaction_key: string;
@@ -80,12 +84,14 @@ interface _Options {
   alternativesCount: number;
   alternativesSet: boolean;
   profanityFilter: boolean;
-  PCIReadaction: boolean;
-  numbersReadaction: boolean;
-  SSNReadaction: boolean;
+  PCIRedaction: boolean;
+  numbersRedaction: boolean;
+  SSNRedaction: boolean;
   keywords: Array<Keyword>;
   searchedTerms: Array<string>;
   searchSet: boolean;
+  host: string;
+  callbackUrl: string | null;
 }
 
 function buildAPIRoute(options: _Options): string {
@@ -102,13 +108,13 @@ function buildAPIRoute(options: _Options): string {
   if (options.profanityFilter) {
     queryParams.push("profanity_filter=true");
   }
-  if (options.numbersReadaction) {
+  if (options.numbersRedaction) {
     queryParams.push("redact=numbers");
   }
-  if (options.SSNReadaction) {
+  if (options.SSNRedaction) {
     queryParams.push("redact=ssn");
   }
-  if (options.PCIReadaction) {
+  if (options.PCIRedaction) {
     queryParams.push("redact=pci");
   }
   for (const keyword of options.keywords) {
@@ -122,6 +128,9 @@ function buildAPIRoute(options: _Options): string {
   }
   for (const term of options.searchedTerms) {
     queryParams.push("search=" + encodeURIComponent(term));
+  }
+  if (options.callbackUrl !== null) {
+    queryParams.push("callback=" + encodeURIComponent(options.callbackUrl));
   }
 
   return (
@@ -203,7 +212,7 @@ class DGOptions<
    *  Can be associated with other `redact*` options.
    */
   readactPCI(): DGOptions<Alt, S, Diarize, Punc> {
-    return new DGOptions({ ...this.options, PCIReadaction: true });
+    return new DGOptions({ ...this.options, PCIRedaction: true });
   }
 
   /**
@@ -212,7 +221,7 @@ class DGOptions<
    *  Can be associated with other `redact*` options.
    */
   readactNumbers(): DGOptions<Alt, S, Diarize, Punc> {
-    return new DGOptions({ ...this.options, numbersReadaction: true });
+    return new DGOptions({ ...this.options, numbersRedaction: true });
   }
 
   /**
@@ -221,7 +230,7 @@ class DGOptions<
    *  Can be associated with other `redact*` options.
    */
   readactSSN(): DGOptions<Alt, S, Diarize, Punc> {
-    return new DGOptions({ ...this.options, SSNReadaction: true });
+    return new DGOptions({ ...this.options, SSNRedaction: true });
   }
 
   /**
@@ -240,29 +249,31 @@ class DGOptions<
       keywords: [...this.options.keywords, ...keywords],
     });
   }
+
   /**
    * Terms or phrases to search for in the submitted audio. Deepgram searches
    * for acoustic patterns in audio rather than text patterns in transcripts
    * because we have noticed that acoustic pattern matching is more performant.
    *
-   * In the response, turn:
-   * ```
-   * {
-   *   metadata: {...},
-   *   channels: [{ words: [...]}],
-   * }
-   * ```
-   * into:
-   * ```
-   * {
-   *   metadata: {...},
-   *   channels: [{
-   *        words: [...],
-   *        search: [ {
-   *            query: string,
-   *            hits : [ { ... }]
-   *        }]
-   *     }],
+   * Example:
+   * ```js
+   * const DeepgramAPI = require("deepgram").DeepgramAPI;
+   *
+   * async function example() {
+   *   const resp = await DeepgramAPI
+   *       .addSearchTerms(["Hello world", "Bazinga"])
+   *       .withCredentials(DG_CREDS)
+   *       .transcribeUrl("http//site.com/my-audio-file.mp3");
+   *
+   *   if (resp.status === "error") {
+   *       console.log(resp.reason);
+   *   } else {
+   *       const search = resp.channels[0].search;
+   *       // The "Hello world" results:
+   *       console.log(search[0].query, search[0].hits);
+   *       // The "Bazinga" results:
+   *       console.log(search[1].query, search[1].hits);
+   *   }
    * }
    * ```
    */
@@ -276,8 +287,46 @@ class DGOptions<
     });
   }
 
-  buildAPIRoute(): string {
-    return buildAPIRoute(this.options);
+  /**
+   * Build the URL based on the options to request the API.
+   *
+   * You can use this route to manually perform the
+   * request to Deepgram API.
+   *
+   * Note that with `.withCredentials(...)` you'll be able to
+   * perform the query and have type information about the response.
+   *
+   * Example:
+   * ```js
+   * const DeepgramAPI = require("deepgram").DeepgramAPI;
+   *
+   * const route = DeepgramAPI.diarize().punctuate().buildURL();
+   *
+   * // You of course can use any lib you want to perform the HTTP request.
+   * axios.get(route).then(response => {
+   *     // ...
+   *     // deal with the response
+   *     // ..
+   * });
+   * ```
+   *
+   */
+  buildURL(): string {
+    return "https://" + this.options.host + buildAPIRoute(this.options);
+  }
+
+  decoderFromString(): (
+    deepgramAPIResp: string
+  ) => DGApiResponse<Alt, S, DGWord<Diarize, Punc>> {
+    return (deepgramAPIResp) =>
+      decodeApiResponseFromString(this.options, deepgramAPIResp);
+  }
+
+  decoderFromJson(): (
+    deepgramAPIRespJson: any
+  ) => DGApiResponse<Alt, S, DGWord<Diarize, Punc>> {
+    return (deepgramAPIRespJson) =>
+      decodeApiResponseFromJson(this.options, deepgramAPIRespJson);
   }
 
   withCredentials(credentials: {
@@ -319,6 +368,22 @@ class DGExectuor<
     });
   }
 
+  transcribeUrlWithCallbackUrl({
+    audioUrl,
+    callbackUrl,
+  }: {
+    audioUrl: string;
+    callbackUrl: string;
+  }): Promise<DGApiCallbackResponse> {
+    return listenWithCallbackUrl({
+      api_key: this.api_key,
+      api_secret: this.api_secret,
+      options: this.options,
+      source: { kind: "url", url: audioUrl },
+      callbackUrl,
+    });
+  }
+
   transcribeBuffer({
     buffer,
     mimetype,
@@ -335,6 +400,62 @@ class DGExectuor<
   }
 }
 
+/**
+ * Object configuring a request to Deepgram API.
+ *
+ * You'll need Deepgram API key and secret to actually perform
+ * the request. Note that you can also only use this object to build
+ * the URL and perform the request yourself (see the `.buildURL()` method).
+ *
+ * # Example
+ * ```js
+ * const DeepgramAPI = require("deepgram").DeepgramAPI;
+ *
+ * async function example() {
+ *   const resp = await DeepgramAPI
+ *       .withCredentials({api_key: DG_KEY, api_secret: DG_SECRET})
+ *       .transcribeUrl("http//site.com/my-audio-file.mp3");
+ *
+ *   if (resp.status === "error") {
+ *       console.log(resp.reason);
+ *   } else {
+ *       console.log(resp.channels[0].transcript);
+ *   }
+ * }
+ *
+ * example();
+ * ```
+ *
+ * # Example with callback url
+ * If you would like your submitted audio to be processed asynchronously, you can use
+ * `transcribeUrlWithCallbackUrl`. In this case, Deepgram API will immediately respond
+ * with a `request_id`. When it has finished analyzing the audio, it will send a POST
+ * request to the provided URL with an appropriate HTTP status code.
+ *
+ * > Notes:
+ * >  - You may embed basic authentication credentials in the callback URL.
+ * >  - Only ports 80, 443, 8080, and 8443 can be used for callbacks.
+ *
+ * ```js
+ * async function example() {
+ *   const resp = await Deepgram.withCredentials({
+ *     api_key: DG_KEY,
+ *     api_secret: DG_SECRET,
+ *   }).transcribeUrlWithCallbackUrl({
+ *     audioUrl: UBER_AUDIO_URL,
+ *     callbackUrl: "http://site.com/blah",
+ *   });
+ *
+ *   if (resp.status === "error") {
+ *     console.log(resp.reason);
+ *   } else {
+ *     console.log(resp.request_id);
+ *   }
+ * }
+ *
+ * example();
+ * ```
+ */
 export const DeepgramAPI: DGOptions<
   "one-alternative",
   "no-search",
@@ -346,12 +467,14 @@ export const DeepgramAPI: DGOptions<
   alternativesCount: 1,
   alternativesSet: false,
   profanityFilter: false,
-  PCIReadaction: false,
-  numbersReadaction: false,
-  SSNReadaction: false,
+  PCIRedaction: false,
+  numbersRedaction: false,
+  SSNRedaction: false,
   keywords: [],
   searchedTerms: [],
   searchSet: false,
+  host: "brain.deepgram.com",
+  callbackUrl: null,
 });
 
 function listen<
@@ -403,22 +526,109 @@ function listen<
       dgRes.on("end", () => {
         // When we have the complete answer from Deepgram API,
         // we can resolve the promise
+        resolve(decodeApiResponseFromString(options, dgResContent));
+      });
+      dgRes.on("error", (err) => {
+        resolve({ status: "error", reason: JSON.stringify(err) });
+      });
+    });
+
+    httpRequest.on("error", (err) => {
+      resolve({ status: "error", reason: JSON.stringify(err) });
+    });
+    httpRequest.write(payload);
+    httpRequest.end();
+  });
+}
+
+function decodeApiResponseFromString<
+  Alt extends Alternatives,
+  S extends SearchKind,
+  Diarize extends Diarization,
+  Punc extends Punctuation
+>(
+  options: _Options,
+  dgRes: string
+): DGApiResponse<Alt, S, DGWord<Diarize, Punc>> {
+  const dgResJson = JSON.parse(dgRes);
+  return decodeApiResponseFromJson(options, dgResJson);
+}
+
+function decodeApiResponseFromJson<
+  Alt extends Alternatives,
+  S extends SearchKind,
+  Diarize extends Diarization,
+  Punc extends Punctuation
+>(
+  options: _Options,
+  dgResJson: any
+): DGApiResponse<Alt, S, DGWord<Diarize, Punc>> {
+  if (dgResJson.error) {
+    return { status: "error", reason: JSON.stringify(dgResJson) };
+  } else {
+    return {
+      status: "success",
+      metadata: dgResJson.metadata as DGApiMetadata,
+      channels: options.alternativesSet
+        ? dgResJson.results.channels
+        : dgResJson.results.channels.map((channel: any) =>
+            options.searchSet
+              ? { search: channel.search, ...channel.alternatives[0] }
+              : channel.alternatives[0]
+          ),
+    } as DGApiResponse<Alt, S, DGWord<Diarize, Punc>>;
+  }
+}
+
+function listenWithCallbackUrl({
+  api_key,
+  api_secret,
+  source,
+  options,
+  callbackUrl,
+}: {
+  api_key: string;
+  api_secret: string;
+  source: DGSource;
+  options: _Options;
+  callbackUrl: string;
+}): Promise<DGApiCallbackResponse> {
+  const credentialsB64 = Buffer.from(api_key + ":" + api_secret).toString(
+    "base64"
+  );
+
+  const requestOptions = {
+    host: "brain.deepgram.com",
+
+    path: buildAPIRoute({ ...options, callbackUrl }),
+    method: "POST",
+    headers: {
+      "Content-Type":
+        source.kind === "url" ? "application/json" : source.mimetype,
+      Authorization: "Basic " + credentialsB64,
+    },
+  };
+
+  return new Promise((resolve, _) => {
+    const httpRequest = request(requestOptions, (dgRes) => {
+      // we accumulate data in `dgResContent` as it
+      // comes from Deepgram API
+      let dgResContent = "";
+      dgRes.on("data", (chunk) => {
+        dgResContent += chunk;
+      });
+
+      dgRes.on("end", () => {
+        // When we have the complete answer from Deepgram API,
+        // we can resolve the promise
         const dgResJson = JSON.parse(dgResContent);
         if (dgResJson.error) {
           resolve({ status: "error", reason: dgResContent });
         } else {
-          console.log(dgResJson.results.channels[0]);
           resolve({
             status: "success",
-            metadata: dgResJson.metadata as DGApiMetadata,
-            channels: options.alternativesSet
-              ? dgResJson.results.channels
-              : dgResJson.results.channels.map((channel: any) =>
-                  options.searchSet
-                    ? { search: channel.search, ...channel.alternatives[0] }
-                    : channel.alternatives[0]
-                ),
-          } as DGApiResponse<Alt, S, DGWord<Diarize, Punc>>);
+            request_id: dgResJson.request_id,
+          });
         }
       });
       dgRes.on("error", (err) => {
@@ -429,6 +639,12 @@ function listen<
     httpRequest.on("error", (err) => {
       resolve({ status: "error", reason: JSON.stringify(err) });
     });
+
+    const payload =
+      source.kind === "url"
+        ? JSON.stringify({ url: source.url })
+        : source.buffer;
+
     httpRequest.write(payload);
     httpRequest.end();
   });

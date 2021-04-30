@@ -1,3 +1,5 @@
+// @ts-check
+
 require("dotenv").config();
 
 const DG_KEY = process.env.DG_KEY;
@@ -9,15 +11,22 @@ const UBER_AUDIO_URL =
 const DeepgramAPI = require("./dgsdk").DeepgramAPI;
 
 async function example() {
-  const resp = await DeepgramAPI.withCredentials({
-    api_key: DG_KEY,
-    api_secret: DG_SECRET,
-  }).transcribeUrl(UBER_AUDIO_URL);
+  const resp = await DeepgramAPI.diarize()
+    .punctuate()
+    .withCredentials({
+      api_key: DG_KEY,
+      api_secret: DG_SECRET,
+    })
+    .transcribeUrl(UBER_AUDIO_URL);
 
   if (resp.status === "error") {
+    resp.reason;
     console.log(resp.reason);
   } else {
-    console.log(resp.channels[0].transcript);
+    const words = new Set(resp.channels[0].words.map((word) => word.word));
+    console.log(
+      new Set(resp.channels[0].words.map((word) => word.punctuated_word))
+    );
   }
 }
 

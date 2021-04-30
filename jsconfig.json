@@ -1,11 +1,9 @@
 {
-    "compilerOptions": {
-        "target": "ES6",
-        "module": "commonjs",
-        "checkJs": true,
-        "diagnostics": true
-    },
-    "exclude": [
-        "node_modules"
-    ]
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "checkJs": true,
+    "diagnostics": true
+  },
+  "exclude": ["node_modules"]
 }
