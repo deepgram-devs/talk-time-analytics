@@ -1,78 +1,95 @@
-# What is this app for?
+# Talk Time Analytics using Deepgram
+
+[![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](#remix-on-glitch)
 
 This app aims to demonstrate how to use Deepgram API to compute
-talk time per speaker.
+talk time per speaker. We then display the calculated talk time
+in a pie chart.
 
-We use [Chart.js](https://chartjs.org/) to render those data.
+## Prerequisites
 
-**WARNING**: This is an example application only designed for demoing. We
-strongly discourage direct use of this code in production environnement.
+You will need:
 
-# How can I deploy it?
+- A [free Deepgram account](https://console.deepgram.com/signup?utm_source=DEV_REL&utm_medium=github&utm_content=talk-time-analytics)
+- A Deepgram [API key](https://developers.deepgram.com/api-reference/speech-recognition-api#tag/API-Keys)
 
-_Prerequisites: Deepgram account and API Key._
+## Getting Started
 
-You can "remix" this application on Glitch:
+You can run this application by remixing it on Glitch or by running it on your
+local computer.
 
-1. Create an API key in Deepgram, note down the secret.
-2. Replace `INSERT_KEY_HERE` and `INSERT_SECRET_HERE`
-   with this API key and secret in the following URL:
-   > https://glitch.com/edit/#!/remix/dg-talk-time-analytics?PORT=3000&DG_KEY=INSERT_KEY_HERE&DG_SECRET=INSERT_SECRET_HERE
+### Remix on Glitch
 
-When accessing this URL in your browser, the project will be forked and deployed. Glitch comes with
-an online editor so you'll have all the needed tools to play with your own app instance!
+Glitch comes with an online editor, so you'll have all the necessary tools
+to explore your own app instance.
 
-# Can I run it on my own computer?
+To remix this application on Glitch replace `YOUR_DEEPGRAM_API_KEY` in the
+following URL with your Deepgram API Key:
 
-_Prerequisites: Deepgram account and API Key._
+> https://glitch.com/edit/#!/import/github/deepgram/talk-time-analytics?PORT=3000&DG_KEY=YOUR_DEEPGRAM_API_KEY
 
-Yes, of course! First, copy-paste those lines in your terminal:
+When accessing this URL in your browser, the project will be forked and deployed.
+
+### Run on localhost
+
+To run this project on your local computer:
+
+#### Clone the repository
+
+Either clone or download the repository to your local machine, in a new directory.
 
 ```bash
 # Clone this repo
 git clone https://github.com/deepgram/talk-time-analytics.git
-# move to the created directory
+
+# Move to the created directory
 cd talk-time-analytics
 ```
 
-Replace `INSERT_KEY_HERE` and `INSERT_SECRET_HERE` with your API key and secret
-in the following snippet, then save this snippet as a file named `.env`
-(note that this is bash-like file, so spaces around `=` are not allowed).
+#### Configure the settings
 
-```bash
-PORT=3000
-DG_KEY=INSERT_KEY_HERE
-DG_SECRET=INSERT_SECRET_HERE
-```
+Your application will need to know more about you before it can run. Copy the
+`.env-example` file into a new file named `.env` and edit this new file to
+reflect the settings you want to use:
 
-Then, install the dependencies and start the server:
+- `PORT`: The port you wish to run the application on. Leaving this as port 3000
+is acceptable.
+- `DG_KEY`: The Deepgram API key you created earlier in this tutorial.
+
+#### Install the dependencies
+
+In the directory where you downloaded the code, run the following command to
+bring in the dependencies needed for this project.
 
 ```bash
 npm install
+```
+
+#### Start the server
+
+With the configuration done and the dependencies in place, your application
+is ready to go! Run it with:
+
+```bash
 npm start
 ```
 
-# How does it work?
+## Development and Contributing
 
-The workflow is the following:
+Interested in contributing? We ❤️ pull requests!
 
-- the user requests the `/` URL, so the server (`server.js`) serves the
-  `views/index.ejs` file to the user;
-- if the user fills up the "FROM AN URL" form, the server will send a
-  request to Deepgram API, with `{ "url": "<whatever the user sent>".}`;
-- if the user sends up a file from his device, the file is sent to the
-  server and then forwarded to Deepgram API;
-- in both cases, when Deepgram API answers we compute the speaking time
-  for each speaker and use the `views/analytics.ejs` template to display
-  results.
+To make sure our community is safe for all, be sure to review and agree to our
+[Code of Conduct](./CODE_OF_CONDUCT.md). Then see the
+[Contribution](./CONTRIBUTING.md) guidelines for more information.
 
-_Note:_ we could directly request Deepgram API from the browser, _BUT_ this would
-ask you disclosing your Deepgram API key to the user. Think about it twice
-before choosing this option.
+## Getting Help
 
-# Notes on CSS
+We love to hear from you so if you have questions, comments or find a bug in the
+project, let us know! You can either:
 
-The `public/main.css` is a CSS file generated with [Tailwindcss](https://tailwindcss.com/).
-For development convenience, we ship the raw output with all classes in it.
-For an actual application, you would certainly like to
-["purge" this file](https://tailwindcss.com/docs/optimizing-for-production#writing-purgeable-html).
+- [Open an issue](https://github.com/deepgram/talk-time-analytics/issues/new) on this repository
+- Tweet at us! We're [@DeepgramDevs on Twitter](https://twitter.com/DeepgramDevs)
+
+## Further Reading
+
+Check out the Developer Documentation at [https://developers.deepgram.com/](https://developers.deepgram.com/)

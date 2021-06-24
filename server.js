@@ -5,7 +5,6 @@
 require("dotenv").config();
 
 const express = require("express");
-const bodyParser = require("body-parser");
 const http = require("http");
 
 const https = require("https"); // used to perform request to Deepgram API
@@ -13,22 +12,11 @@ const ejs = require("ejs"); // template engine
 const multer = require("multer"); // handle file upload
 const fs = require("fs"); // access to the server's file system.
 
-/** Deepgram API key and secret.
- * - See https://developers.deepgram.com/api-reference/speech-recognition-api#operation/createAPIKey
- *   to create the key with cURL or equivalent tool.
- * - Login to https://missioncontrol.deepgram.com/ to create one with a graphical user interface (click on
- *   "View Usage").
- */
 const DG_KEY = process.env.DG_KEY;
-const DG_SECRET = process.env.DG_SECRET;
 
-if (DG_KEY === undefined || DG_SECRET === undefined) {
-  throw "You must define DG_KEY and DG_SECRET in your .env file";
+if (DG_KEY === undefined) {
+  throw "You must define DG_KEY in your .env file";
 }
-
-// Encode the Deepgram credentials in base64. Will be used to authenticate
-// through the Deepgram API.
-const DG_CREDENTIALS = Buffer.from(DG_KEY + ":" + DG_SECRET).toString("base64");
 
 const app = express();
 app.set("view engine", "ejs"); // initialize "ejs" template engine
@@ -62,8 +50,8 @@ app.get("/uploaded-file/:filename", (req, res) => {
 });
 
 // enable body parsing
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 /*
  * Basic configuration:
@@ -97,15 +85,16 @@ app.get("/", (req, res) => {
  */
 function requestDeepgramAPI({ res, filename, fileUrl, contentType, payload }) {
   const options = {
-    host: "brain.deepgram.com",
+    host: "dev.brain.deepgram.com",
     /** You can add options as parameters in the URL, see the docs:
      * https://developers.deepgram.com/api-reference/speech-recognition-api#operation/transcribeStreamingAudio
      */
-    path: "/v2/listen?punctuate=true&diarize=true",
+    path: "/v1/listen?punctuate=true&diarize=true",
+    port: 8090,
     method: "POST",
     headers: {
       "Content-Type": contentType,
-      Authorization: "Basic " + DG_CREDENTIALS,
+      Authorization: "token " + DG_KEY,
     },
   };
   const dgReq = https.request(options, (dgRes) => {
