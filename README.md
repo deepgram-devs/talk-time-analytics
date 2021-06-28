@@ -40,7 +40,7 @@ Either clone or download the repository to your local machine, in a new director
 
 ```bash
 # Clone this repo
-git clone https://github.com/deepgram/talk-time-analytics.git
+git clone https://github.com/deepgram-devs/talk-time-analytics.git
 
 # Move to the created directory
 cd talk-time-analytics
@@ -87,7 +87,7 @@ To make sure our community is safe for all, be sure to review and agree to our
 We love to hear from you so if you have questions, comments or find a bug in the
 project, let us know! You can either:
 
-- [Open an issue](https://github.com/deepgram/talk-time-analytics/issues/new) on this repository
+- [Open an issue](https://github.com/deepgram-devs/talk-time-analytics/issues/new) on this repository
 - Tweet at us! We're [@DeepgramDevs on Twitter](https://twitter.com/DeepgramDevs)
 
 ## Further Reading
