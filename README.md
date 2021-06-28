@@ -1,8 +1,8 @@
 # Talk Time Analytics using Deepgram
 
-[![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](#remix-on-glitch)
+[![Remix on Glitch](https://img.shields.io/badge/Glitch-remix-blue?logo=glitch)](#remix-on-glitch)
 
-This app aims to demonstrate how to use Deepgram API to compute
+Analyzing the talk time of participants in a classroom, meeting, or phone call can help you improve participant engagement, sales presentations, and support response. This app aims to demonstrate how to use Deepgram API to compute
 talk time per speaker. We then display the calculated talk time
 in a pie chart.
 
@@ -10,7 +10,7 @@ in a pie chart.
 
 You will need:
 
-- A [free Deepgram account](https://console.deepgram.com/signup?utm_source=DEV_REL&utm_medium=github&utm_content=talk-time-analytics)
+- A [free Deepgram account](https://console.deepgram.com/signup?utm_source=DEVREL&utm_medium=github&utm_content=talk-time-analytics)
 - A Deepgram [API key](https://developers.deepgram.com/api-reference/speech-recognition-api#tag/API-Keys)
 
 ## Getting Started
@@ -26,7 +26,7 @@ to explore your own app instance.
 To remix this application on Glitch replace `YOUR_DEEPGRAM_API_KEY` in the
 following URL with your Deepgram API Key:
 
-> https://glitch.com/edit/#!/import/github/deepgram/talk-time-analytics?PORT=3000&DG_KEY=YOUR_DEEPGRAM_API_KEY
+> https://glitch.com/edit/#!/remix/dg-uc-talk-time-analytics?PORT=3000&DG_KEY=YOUR_DEEPGRAM_API_KEY
 
 When accessing this URL in your browser, the project will be forked and deployed.
 
