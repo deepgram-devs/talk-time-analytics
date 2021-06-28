@@ -2,7 +2,7 @@
 
 [![Remix on Glitch](https://cdn.glitch.com/2703baf2-b643-4da7-ab91-7ee2a2d00b5b%2Fremix-button.svg)](#remix-on-glitch)
 
-This app aims to demonstrate how to use Deepgram API to compute
+Analyzing the talk time of participants in a classroom, meeting, or phone call can help you improve participant engagement, sales presentations, and support response. This app aims to demonstrate how to use Deepgram API to compute
 talk time per speaker. We then display the calculated talk time
 in a pie chart.
 
