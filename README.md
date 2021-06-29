@@ -2,9 +2,10 @@
 
 [![Remix on Glitch](https://img.shields.io/badge/Glitch-remix-blue?logo=glitch)](#remix-on-glitch)
 
-Analyzing the talk time of participants in a classroom, meeting, or phone call can help you improve participant engagement, sales presentations, and support response. This app aims to demonstrate how to use Deepgram API to compute
-talk time per speaker. We then display the calculated talk time
-in a pie chart.
+Analyzing the talk time of participants in a classroom, meeting, or phone call
+can help you improve participant engagement, sales presentations, and support
+response. This app aims to demonstrate how to use Deepgram API to compute talk
+time per speaker. We then display the calculated talk time in a pie chart.
 
 ## Prerequisites
 
@@ -13,7 +14,7 @@ You will need:
 - A [free Deepgram account](https://console.deepgram.com/signup?utm_source=DEVREL&utm_medium=github&utm_content=talk-time-analytics)
 - A Deepgram [API key](https://developers.deepgram.com/api-reference/speech-recognition-api#tag/API-Keys)
 
-## Getting Started
+## Getting started
 
 You can run this application by remixing it on Glitch or by running it on your
 local computer.
@@ -74,7 +75,7 @@ is ready to go! Run it with:
 npm start
 ```
 
-## Development and Contributing
+## Development and contributing
 
 Interested in contributing? We ❤️ pull requests!
 
