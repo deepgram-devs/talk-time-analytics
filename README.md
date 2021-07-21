@@ -28,7 +28,7 @@ To remix this application on Glitch, go to the following URL:
 
 When accessing this URL in your browser, the project will be forked and deployed.
 
-#### Configure the Settings
+#### Configure the settings
 
 Your application will need to know more about you before it can run successfully. Edit the environment variables (`.env`) to reflect the settings you want to use:
 
@@ -89,14 +89,14 @@ To make sure our community is safe for all, be sure to review and agree to our
 [Code of Conduct](./CODE_OF_CONDUCT.md). Then see the
 [Contribution](./CONTRIBUTING.md) guidelines for more information.
 
-## Getting Help
+## Getting help
 
-We love to hear from you, so if you have questions, comments, or find a bug in the
+We love to hear from you, so if you have questions or comments, or find a bug in the
 project, let us know! You can either:
 
 - [Open an issue](https://github.com/deepgram-devs/talk-time-analytics/issues/new) in this repository
 - Tweet at us! We're [@DeepgramDevs on Twitter](https://twitter.com/DeepgramDevs)
 
-## Further Reading
+## Further reading
 
-Check out the Developer Documentation at [https://developers.deepgram.com/](https://developers.deepgram.com/)
+Check out the Developer Documentation at [https://developers.deepgram.com/](https://developers.deepgram.com/).
