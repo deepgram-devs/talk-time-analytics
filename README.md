@@ -20,7 +20,7 @@ You can run this application by remixing it on Glitch or by running it on your l
 
 ### Remix on Glitch
 
-Glitch comes with an online editor, so you'll have all the necessary tools to explore your own app instance.
+Glitch comes with an online editor, so you'll have all the necessary tools to explore your own app instance. Actions taken in Glitch are subject to [Glitch’s Terms of Service and Privacy Policy](https://glitch.com/legal) and are not covered by any Deepgram agreements.
 
 To remix this application on Glitch, go to the following URL:
 
