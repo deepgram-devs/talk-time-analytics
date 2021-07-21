@@ -12,24 +12,30 @@ time per speaker. We then display the calculated talk time in a pie chart.
 You will need:
 
 - A [free Deepgram account](https://console.deepgram.com/signup?utm_source=DEVREL&utm_medium=github&utm_content=talk-time-analytics)
-- A Deepgram [API key](https://developers.deepgram.com/api-reference/speech-recognition-api#tag/API-Keys)
+- A Deepgram [API key](https://developers.deepgram.com/getting-started/create-api-key)
 
 ## Getting started
 
-You can run this application by remixing it on Glitch or by running it on your
-local computer.
+You can run this application by remixing it on Glitch or by running it on your local computer.
 
 ### Remix on Glitch
 
-Glitch comes with an online editor, so you'll have all the necessary tools
-to explore your own app instance.
+Glitch comes with an online editor, so you'll have all the necessary tools to explore your own app instance.
 
-To remix this application on Glitch replace `YOUR_DEEPGRAM_API_KEY` in the
-following URL with your Deepgram API Key:
+To remix this application on Glitch, go to the following URL:
 
-> https://glitch.com/edit/#!/remix/dg-uc-talk-time-analytics?PORT=3000&DG_KEY=YOUR_DEEPGRAM_API_KEY
+> https://glitch.com/edit/#!/remix/dg-uc-talk-time-analytics
 
 When accessing this URL in your browser, the project will be forked and deployed.
+
+#### Configure the Settings
+
+Your application will need to know more about you before it can run successfully. Edit the environment variables (`.env`) to reflect the settings you want to use:
+
+- `PORT`: The port on which you want to run the application. We generally set this to port 3000.
+- `DG_KEY`: The API Key you created earlier in this tutorial.
+
+Once these variables are set, the application should run automatically.
 
 ### Run on localhost
 
