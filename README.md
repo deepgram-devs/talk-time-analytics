@@ -39,7 +39,9 @@ Once these variables are set, the application should run automatically.
 
 ### Run on localhost
 
-To run this project on your local computer:
+You can also run this project on your local computer. To do so, you will need
+to clone the repository, configure the settings, install the dependencies, and
+start the server.
 
 #### Clone the repository
 
